@@ -1,4 +1,5 @@
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -11,11 +12,13 @@ public class MainLoop extends Thread {
 
 	
 	// define the log level for this Class
-		private static final Level LOGLEVEL = Level.WARNING;
+		private static final Level LOGLEVEL = Level.INFO;
 		private static Logger logger =  Logger.getLogger( MainLoop.class.getName() );
 
-		
-		private  HashMap<Integer, int[] > timeEvents = new HashMap<Integer, int[]>(); 
+		//Integer is the timecode xxx
+		//The arraylist contains all timeevents  at the same time 
+		// and the int array contains the channel and value
+		private  HashMap<Integer, ArrayList<int[]> > timeEvents = new HashMap<Integer, ArrayList<int[]>>(); 
 		private  HashMap<Integer, Integer > channelValues = new HashMap<Integer, Integer>(); 
 	private  Config conf;
 	
@@ -91,13 +94,19 @@ public class MainLoop extends Thread {
 			// TODO if it matches timeevent it jumps in here for the whole minute
 			logger.info("Found time event");
 			
-			int[] eventData = timeEvents.get(currentFormatedTime);
 			
-			int channel = eventData[0];
-			int value = eventData[1];
+			ArrayList<int[]> eventsOnTime = timeEvents.get(currentFormatedTime);
 			
-			logger.info("Channel = " + channel);
-			logger.info("Value = " + value);
+			for (int[] eventData : eventsOnTime) {
+								
+				int channel = eventData[0];
+				int value = eventData[1];
+				
+				logger.info("Channel = " + channel);
+				logger.info("Value = " + value);
+			}
+		
+			
 			
 		}
 		
@@ -121,9 +130,12 @@ public class MainLoop extends Thread {
 		
 		String[] events = conf.getString("timeevents").split(",");
 		
+		// parse all time events
 		for (String event : events) {
 			String[] eventData = event.split("-");
 			
+			//check if right format
+			//skip invalid ones
 			if (eventData.length != 3) {
 				logger.warning( "Event Data not correct. timecode - channel - value");
 				continue;
@@ -153,7 +165,17 @@ public class MainLoop extends Thread {
 					continue;
 			}
 			
-			timeEvents.put(time, data );
+			// if our hashmap already contains an event on that time, put it in the array list
+			//else create a new one 
+			if (timeEvents.containsKey(time)) {
+				
+				timeEvents.get(time).add(data);
+				
+			}else{
+				ArrayList<int[]> e = new ArrayList<int[]>();
+				e.add(data);
+				timeEvents.put(time, e );
+			}
 		}
 		
 		logger.info("Time events loaded");
