@@ -19,8 +19,12 @@ public class MainLoop extends Thread {
 		//The arraylist contains all timeevents  at the same time 
 		// and the int array contains the channel and value
 		private  HashMap<Integer, ArrayList<int[]> > timeEvents = new HashMap<Integer, ArrayList<int[]>>(); 
+		
 		private  HashMap<Integer, Integer > channelValues = new HashMap<Integer, Integer>(); 
-	private  Config conf;
+		
+		private  Config conf;
+		
+		private ArtnetDevice artnetDevice = new ArtnetDevice(); 
 	
 	
 	
@@ -51,9 +55,8 @@ public class MainLoop extends Thread {
 			
 			checkTimeEvents();
 			//checkSensors();
-			//changeArtnetValues();
-			//sendArtnet();
-			
+			sendData();
+			artnetDevice.allChannelsOn();
 		
 			// wait some time to check next
 			try {
@@ -70,6 +73,11 @@ public class MainLoop extends Thread {
 	}
 
 	
+	private void sendData() {
+		artnetDevice.sendValuesForChannels( channelValues);
+	}
+
+
 	private void checkTimeEvents() {
 		
 		Date date = new Date(System.currentTimeMillis());
@@ -100,10 +108,8 @@ public class MainLoop extends Thread {
 			for (int[] eventData : eventsOnTime) {
 								
 				int channel = eventData[0];
-				int value = eventData[1];
-				
-				logger.info("Channel = " + channel);
-				logger.info("Value = " + value);
+				int value = eventData[1];		
+				channelValues.put(channel, value);
 			}
 		
 			
@@ -121,8 +127,7 @@ public class MainLoop extends Thread {
 
 
 	private void setUpArtNet() {
-		// TODO Auto-generated method stub
-		
+		artnetDevice.start();
 	}
 
 
