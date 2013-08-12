@@ -113,8 +113,8 @@ public class MainLoop extends Thread {
 				int value = event.getTime();	
 				
 				//map to dmx 0-255
-
-				value = Math.round( 255 * (value/100) );
+				value = startValue + (endValue - startValue) * value/100;
+				
 				// old values get replaced 
 				channelValues.put(channel, value);
 			}
