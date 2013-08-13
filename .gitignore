@@ -7,4 +7,6 @@
 
 *.prefs
 
-/bin
+/bin/*class
+
+/bin/Helper/
