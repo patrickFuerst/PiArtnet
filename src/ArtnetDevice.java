@@ -86,8 +86,8 @@ public class ArtnetDevice implements ArtNetDiscoveryListener {
 
 	}
 
-	public void sendValuesForChannels(HashMap<Integer, ChannelValue> channelValues) {
-		Set<Entry<Integer, ChannelValue>> s = channelValues.entrySet();
+	public void sendValuesForChannels(HashMap<Integer, Integer> channelValues) {
+		Set<Entry<Integer, Integer>> s = channelValues.entrySet();
 
 
 		byte[] buffer = new byte[512];
@@ -95,8 +95,8 @@ public class ArtnetDevice implements ArtNetDiscoveryListener {
 			buffer[i] = (byte)0;
 		}
 		
-		for (Entry<Integer, ChannelValue> entry : s) {
-			buffer[entry.getKey()] =  (byte)entry.getValue().getCurrentValue();
+		for (Entry<Integer, Integer> entry : s) {
+			buffer[entry.getKey()] =  entry.getValue().byteValue();
 
 		}
 

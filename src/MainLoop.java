@@ -27,8 +27,8 @@ public class MainLoop extends Thread implements GpioPinListenerDigital  {
 	//The arraylist contains all timeevents  at the same time 
 	private  HashMap<Integer, ArrayList<TimeEvent> > timeEvents = new HashMap<Integer, ArrayList<TimeEvent>>(); 
 
-	private  HashMap<Integer, ChannelValue> channelValues = new HashMap<Integer, ChannelValue>(); 
-
+	private  HashMap<Integer, Integer > channelValues = new HashMap<Integer, Integer>(); 
+	private  HashMap<Integer, Integer > oldChannelValues = new HashMap<Integer, Integer>(); 
 
 	private  Config conf;
 
@@ -37,31 +37,32 @@ public class MainLoop extends Thread implements GpioPinListenerDigital  {
 
 	//map the Time events value to this values.
 	private int startValue, endValue;
-
+	
+	// checks if the sensor are on or off
+	private boolean sensor1On, sensor2On;
+	
 	// how long the thread sleeps after each run
 	private int sleepTime; 
 
 	// the min and max changes if the sensor in on 
 	private int minPercentageChange, maxPercentageChange;
 	
-	// define how long the value of a channel is hold, after a sensor changed it
-	//in seconds
-	private int sensorHoldTime;
-
-
+	// defines which sensor changes which channel
+	private int sensor1Channel,sensor2Channel;
+	
 	// create gpio controller instance
 	final GpioController gpio = GpioFactory.getInstance();
 
-	// provision gpio pin #02 as an input pin with its internal pull down resistor enabled
-	// (configure pin edge to both rising and falling to get notified for HIGH and LOW state
-	// changes)
-	GpioPinDigitalInput sensor1 = gpio.provisionDigitalInputPin(RaspiPin.GPIO_07,             // PIN NUMBER
-			"Sensor1",                   // PIN FRIENDLY NAME (optional)
-			PinPullResistance.PULL_DOWN); // PIN RESISTANCE (optional)
+    // provision gpio pin #02 as an input pin with its internal pull down resistor enabled
+    // (configure pin edge to both rising and falling to get notified for HIGH and LOW state
+    // changes)
+    GpioPinDigitalInput sensor1 = gpio.provisionDigitalInputPin(RaspiPin.GPIO_07,             // PIN NUMBER
+                                                                 "Sensor1",                   // PIN FRIENDLY NAME (optional)
+                                                                 PinPullResistance.PULL_DOWN); // PIN RESISTANCE (optional)
 
-	GpioPinDigitalInput sensor2 = gpio.provisionDigitalInputPin(RaspiPin.GPIO_00,             // PIN NUMBER
-			"Sensor2",                   // PIN FRIENDLY NAME (optional)
-			PinPullResistance.PULL_DOWN); // PIN RESISTANCE (optional)
+    GpioPinDigitalInput sensor2 = gpio.provisionDigitalInputPin(RaspiPin.GPIO_00,             // PIN NUMBER
+    															"Sensor2",                   // PIN FRIENDLY NAME (optional)
+    															PinPullResistance.PULL_DOWN); // PIN RESISTANCE (optional)
 
 	public MainLoop(Config conf) {
 		super();
@@ -69,8 +70,9 @@ public class MainLoop extends Thread implements GpioPinListenerDigital  {
 		logger.setLevel(LOGLEVEL);
 		sensor1.addListener(this);
 		sensor2.addListener(this);
+		sensor1On = false;
+		sensor2On = false;
 		sleepTime = 1000;
-		sensorHoldTime = 10;
 	}
 
 
@@ -87,9 +89,9 @@ public class MainLoop extends Thread implements GpioPinListenerDigital  {
 		while(true){
 
 			checkTimeEvents();
-			checkValuesInSensorMode();
+			checkSensors();
 			sendData();
-
+						
 			// wait some time to check next
 			try {
 				MainLoop.sleep(sleepTime);
@@ -103,59 +105,65 @@ public class MainLoop extends Thread implements GpioPinListenerDigital  {
 
 
 	}
+	
 
-	/**
-	 * returns a random channel from 0 to maxChannel
-	 * @param maxChannel
-	 * @return
-	 */
-	private int getRandomChannel(int maxChannel){
+	private void checkSensors() {
 
-		return (int)(Math.random()* ( maxChannel +1));
-
-	}
-
-	private void checkValuesInSensorMode() {
-
-
-			for ( ChannelValue value : channelValues.values() ) {
+		if (sensor1On) {
 			
-					if ( value.isSensorMode() && value.getValueDuration() > sensorHoldTime) {
-						int oldValue = value.getOldValue();
-						int currentValue = value.getCurrentValue();
-						value.setCurrentValue(oldValue);
-						value.setOldValue(currentValue);
-						value.setSensorMode(false);
-					}
+			Integer currentValue = channelValues.get(sensor1Channel);
+			//only changes value if there isn't an old value
+			// otherwise do nothin, because we don't want to change the values will the sensor is constantly on.
+			if (currentValue != null && !oldChannelValues.containsKey(sensor1Channel)) {
+				int newValue = getRandomValue(currentValue);
+				channelValues.put(sensor1Channel, newValue);
+				oldChannelValues.put(sensor1Channel, currentValue);
+				
 			}
-
-	}
-
-
-	private int getRandomValue(int currentValue, int oldValue) {
-
-		int newValue;
-
-		int percentage = minPercentageChange + (int)(Math.random() * ((maxPercentageChange - minPercentageChange) + 1));		
-
-		if (Math.random() < 0.5) {
-			newValue =  currentValue - currentValue * percentage/100;
-			if (oldValue < currentValue) {
-				newValue -= currentValue -oldValue;			
-			}
-			if (newValue < 0 ) {
-				newValue = 0;
-			}
+			
 		}else{
-			newValue =  currentValue + currentValue * percentage/100;
-			if (oldValue > currentValue) {
-				newValue += currentValue -oldValue;			
-			}
-			if (newValue > 255 ) {
-				newValue = 255;
+			Integer oldValue = oldChannelValues.get(sensor1Channel);
+			if (oldValue != null) {
+				channelValues.put(sensor1Channel, oldValue);	
+				oldChannelValues.remove(sensor1Channel);
 			}
 		}
-		return newValue;
+		
+		
+		
+		if (sensor2On) {
+			//only changes value if there isn't an old value
+			// otherwise do nothin, because we don't want to change the values will the sensor is constantly on.
+			Integer currentValue = channelValues.get(sensor2Channel);
+			if (currentValue != null && !oldChannelValues.containsKey(sensor2Channel)) {
+				int newValue = getRandomValue(currentValue);
+				channelValues.put(sensor2Channel, newValue);
+				oldChannelValues.put(sensor2Channel, currentValue);
+
+			}
+			
+		}else{
+			Integer oldValue = oldChannelValues.get(sensor2Channel);
+			if (oldValue != null) {
+				channelValues.put(sensor2Channel, oldValue);
+				oldChannelValues.remove(sensor2Channel);
+			}
+		}
+		
+		
+	}
+
+
+	private int getRandomValue(Integer currentValue) {
+		
+		int percentage = minPercentageChange + (int)(Math.random() * ((maxPercentageChange - minPercentageChange) + 1));		
+		
+		if (Math.random() < 0.5) {
+			return currentValue - currentValue * percentage/100;
+		}else
+			return currentValue + currentValue * percentage/100;
+
+		
 	}
 
 
@@ -188,11 +196,12 @@ public class MainLoop extends Thread implements GpioPinListenerDigital  {
 
 				int channel = event.getChannel();
 				int value = event.getValue();
-
+				
 				//map to dmx 0-255
 				value = startValue + (endValue - startValue) * value/100;
-
-				channelValues.get(channel).setCurrentValue(value);
+				
+				// old values get replaced 
+				channelValues.put(channel, value);
 			}
 
 
@@ -212,45 +221,44 @@ public class MainLoop extends Thread implements GpioPinListenerDigital  {
 		loadInitValues();
 		logger.info("Properties loaded");
 
-
+		
 	}
 
 	private void loadInitValues() {
 
 		int initValue  = conf.getInt("initValue");
-		channelValues.put(0, new ChannelValue(initValue));
-		channelValues.put(1, new ChannelValue(initValue));
-		channelValues.put(2, new ChannelValue(initValue));
-		channelValues.put(3, new ChannelValue(initValue));
-		channelValues.put(4, new ChannelValue(initValue));
-		channelValues.put(5, new ChannelValue(initValue));
-		channelValues.put(6, new ChannelValue(initValue));
-
+		channelValues.put(0, initValue);
+		channelValues.put(1, initValue);
+		
 	}
 
 
 	private void loadSensorProperties() {
 		int min  = conf.getInt("minPercentageChange");
 		int max = conf.getInt("maxPercentageChange");	
-
+		
 		if( minPercentageChange < 0 || minPercentageChange > 100 
 				|| maxPercentageChange < 0 || maxPercentageChange > 100){
 			logger.warning(" Percentage values have to be between 0 and 100");
 		}else{
-
+		
 			minPercentageChange = min;
 			maxPercentageChange = max;
 		}
-		int sht  = conf.getInt("sensorHoldTime");
-
-		if( sht < 0 ){
-			logger.warning(" Sensor hold time has to be greater 0");
+		int s1c  = conf.getInt("sensor1Channel");
+		int s2c = conf.getInt("sensor2Channel");	
+		
+		if( s1c < 0 || s1c > 512 
+				|| s2c < 0 || s2c > 512){
+			logger.warning(" Sensor to channel values have to be between 0 and 512");
 		}else{
-			sensorHoldTime = sht;
-
+		
+			sensor1Channel = s1c;
+			sensor2Channel = s2c;
+			
 		}
-
-
+		
+		
 	}
 
 
@@ -330,30 +338,15 @@ public class MainLoop extends Thread implements GpioPinListenerDigital  {
 	public void handleGpioPinDigitalStateChangeEvent( GpioPinDigitalStateChangeEvent event) {
 
 		logger.info("Input Event from " + event.getPin().toString() + ". State = " +  event.getState());
-
-		//only trigger high events
-		if(event.getState().isHigh()){
-
-			ChannelValue randomChannelValue;
-			int randomChannel;
-			// search a channel which isn't in sensor mode
-			do{		
-				randomChannel = getRandomChannel(5);
-				randomChannelValue = channelValues.get(randomChannel);
-
-			}while( randomChannelValue.isSensorMode() );
-
-			int currentValue = randomChannelValue.getCurrentValue();
-			int oldValue = randomChannelValue.getOldValue();
-			int newValue = getRandomValue(currentValue, oldValue);
-			randomChannelValue.setCurrentValue(newValue);
-			randomChannelValue.setOldValue(currentValue);
-			randomChannelValue.setSensorMode(true);
-			randomChannelValue.setTimeValueChangedBySensor(System.currentTimeMillis());
-			logger.info("Value changed for channel " + randomChannel);
-
+		if (event.getPin().getName() == "Sensor1") {
+			sensor1On = event.getState().isHigh();
+		}else if (event.getPin().getName() == "Sensor2") {
+			sensor2On = event.getState().isHigh();
 
 		}
-
+		
+	    
+		
 	}
+
 }
