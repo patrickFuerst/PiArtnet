@@ -13,7 +13,6 @@ import artnet4j.ArtNetNode;
 import artnet4j.ArtNetNodeDiscovery;
 import artnet4j.events.ArtNetDiscoveryListener;
 import artnet4j.packets.ArtDmxPacket;
-import artnet4j.packets.ArtNetPacketParser;
 
 public class ArtnetDevice implements ArtNetDiscoveryListener {
 
@@ -26,9 +25,8 @@ public class ArtnetDevice implements ArtNetDiscoveryListener {
 	private int sequenceID;
 
 	public ArtnetDevice() {
-		ArtNetPacketParser.logger.setLevel(Level.ALL);
-		ArtNet.logger.setLevel(Level.ALL);
-		logger.setLevel(Level.ALL);
+		ArtNet.logger.setLevel(Level.WARNING);
+		logger.setLevel(Level.INFO);
 	}
 
 	@Override
