@@ -1,9 +1,7 @@
 
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
@@ -28,7 +26,9 @@ public class ArtnetDevice implements ArtNetDiscoveryListener {
 	private int sequenceID;
 
 	public ArtnetDevice() {
-		ArtNetPacketParser.logger.setLevel(Level.WARNING);
+		ArtNetPacketParser.logger.setLevel(Level.ALL);
+		ArtNet.logger.setLevel(Level.ALL);
+		logger.setLevel(Level.ALL);
 	}
 
 	@Override
@@ -63,6 +63,8 @@ public class ArtnetDevice implements ArtNetDiscoveryListener {
 		try {
 			artnet = new ArtNet();
 			artnet.start();
+			artnet.setBroadCastAddress("10.255.255.255");
+
 			ArtNetNodeDiscovery discovery = artnet.getNodeDiscovery();
 			discovery.addListener(this);
 			discovery.setInterval(1000);
@@ -110,7 +112,6 @@ public class ArtnetDevice implements ArtNetDiscoveryListener {
 			ArtDmxPacket dmx = new ArtDmxPacket();
 			dmx.setUniverse(connectedNode.getSubNet(), connectedNode.getDmxOuts()[0]);
 			dmx.setSequenceID(sequenceID % 255);
-
 			dmx.setDMX(data, data.length);
 			artnet.unicastPacket(dmx, connectedNode.getIPAddress());
 			sequenceID++;

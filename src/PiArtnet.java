@@ -26,6 +26,7 @@ public class PiArtnet {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return;
 		}
 	
 		MainLoop main = new MainLoop(conf);
