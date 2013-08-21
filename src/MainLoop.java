@@ -16,7 +16,7 @@ import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 
 import Helper.Config;
 
-public class MainLoop extends Thread implements GpioPinListenerDigital {
+public class MainLoop extends Thread implements GpioPinListenerDigital  {
 
 
 	// define the log level for this Class
@@ -182,15 +182,8 @@ public class MainLoop extends Thread implements GpioPinListenerDigital {
 		int hours = calendar.get(Calendar.HOUR_OF_DAY);
 		int minutes = calendar.get(Calendar.MINUTE);
 
-		int formatedHours;
-		if (hours < 10) {
-			formatedHours = 1000 + hours * 100;
-		}else
-			formatedHours = hours * 100;
-
-
 		//time is written in xxxx 
-		int currentFormatedTime = formatedHours + minutes;
+		int currentFormatedTime = hours * 100 + minutes;
 
 		if (timeEvents.containsKey(currentFormatedTime)) {
 			// TODO if it matches timeevent it jumps in here for the whole minute
