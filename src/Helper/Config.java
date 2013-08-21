@@ -1,6 +1,7 @@
  package Helper;
 
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -30,8 +31,7 @@ public class Config {
 
 		logger.setLevel(LOGLEVEL);
 		
-		java.io.InputStream is = ClassLoader.getSystemResourceAsStream(name);
-		if (is != null) {
+		java.io.InputStream is = new FileInputStream("/boot/" + name);
 			props = new Properties();
 			try {
 				props.load(is);			
@@ -48,10 +48,7 @@ public class Config {
 					throw e;
 				}
 			}
-		} else {
-			logger.severe("Properties file not found!");
-			throw new IOException();
-		}
+		
 	}
 
 	/**
