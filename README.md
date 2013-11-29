@@ -12,7 +12,7 @@ This programm was develpoed for "Particulate Matters" an installation from Birgi
 
 
 
-Dependences
+Dependencies
 ===========
 
 http://pi4j.com      
