@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,7 +26,7 @@ public class ArtnetDevice implements ArtNetDiscoveryListener {
 	private int sequenceID;
 
 	public ArtnetDevice() {
-		ArtNet.logger.setLevel(Level.WARNING);
+		ArtNet.logger.setLevel(Level.INFO);
 		logger.setLevel(Level.INFO);
 	}
 
@@ -61,7 +62,7 @@ public class ArtnetDevice implements ArtNetDiscoveryListener {
 		try {
 			artnet = new ArtNet();
 			artnet.start();
-			artnet.setBroadCastAddress("10.255.255.255");
+			artnet.setBroadCastAddress("10.0.2.255");
 
 			ArtNetNodeDiscovery discovery = artnet.getNodeDiscovery();
 			discovery.addListener(this);
@@ -78,15 +79,15 @@ public class ArtnetDevice implements ArtNetDiscoveryListener {
 
 		byte[] buffer = new byte[512];
 		for (int i = 0; i < buffer.length; i++) {
-			buffer[i] = (byte) 255;
+			buffer[i] = (byte) 0;
 		}
-
+		//logger.info("Send all on");
 		sendPacket(buffer);
 
 
 	}
 
-	public void sendValuesForChannels(HashMap<Integer, ChannelValue> channelValues) {
+	public void sendValuesForChannels(ConcurrentHashMap<Integer, ChannelValue> channelValues) {
 		Set<Entry<Integer, ChannelValue>> s = channelValues.entrySet();
 
 
@@ -99,6 +100,8 @@ public class ArtnetDevice implements ArtNetDiscoveryListener {
 			buffer[entry.getKey()] =  (byte)entry.getValue().getCurrentValue();
 
 		}
+		
+		sendPacket(buffer);
 
 
 	}

@@ -15,20 +15,20 @@ public class PiArtnet {
 	
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		
 		logger.setLevel(LOGLEVEL);
 		logger.info("Hello Pi");
 		
 		Config conf = null;
 		try {
+			// load properties
 			conf = new Config("config.properties");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return;
 		}
-	
+		
 		MainLoop main = new MainLoop(conf);
 		main.start();
 		
